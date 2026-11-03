@@ -38,17 +38,17 @@ describe("Turing", function () {
       expect(await turing.users("nome1")).to.equal(nome1.address);
       expect(await turing.users("roberta")).to.equal(professora.address);
       expect(await turing.getCodinomes()).to.have.length(6);
-      expect(await turing.voting()).to.equal(false);
+      expect(await turing.voting()).to.equal(true);
     });
   });
 
   describe("Superusuários", function () {
     it("owner e professora podem ligar/desligar a votação", async function () {
       const { turing, professora } = await loadFixture(deployFixture);
-      await turing.votingOn();
-      expect(await turing.voting()).to.equal(true);
       await turing.connect(professora).votingOff();
       expect(await turing.voting()).to.equal(false);
+      await turing.votingOn();
+      expect(await turing.voting()).to.equal(true);
     });
 
     it("usuário comum não pode chamar funções restritas", async function () {
@@ -70,14 +70,17 @@ describe("Turing", function () {
       await expect(turing.issueToken("ninguem", 1)).to.be.revertedWith("Codinome inexistente");
     });
 
-    it("updateUser atualiza o endereço e ativa a votação", async function () {
+    it("updateUser atualiza o endereço do codinome", async function () {
       const { turing, nome1, outsider } = await loadFixture(deployFixture);
       await expect(turing.updateUser("", outsider.address)).to.be.revertedWith("Codinome vazio");
 
+      // updateUser não altera o estado da votação.
+      await turing.votingOff();
       await turing.updateUser("nome1", outsider.address);
       expect(await turing.users("nome1")).to.equal(outsider.address);
       expect(await turing.codinomeOf(nome1.address)).to.equal("");
-      expect(await turing.voting()).to.equal(true);
+      expect(await turing.voting()).to.equal(false);
+      await turing.votingOn();
 
       // O endereço antigo não pode mais votar; o novo pode.
       await expect(turing.connect(nome1).vote("nome2", 1)).to.be.revertedWith("Usuario nao autorizado");
@@ -102,6 +105,7 @@ describe("Turing", function () {
 
     it("respeita todos os requires", async function () {
       const { turing, owner, nome1, outsider } = await loadFixture(deployFixture);
+      await turing.votingOff();
       await expect(turing.connect(nome1).vote("nome2", 1)).to.be.revertedWith("Votacao nao esta ativa");
 
       await turing.votingOn();

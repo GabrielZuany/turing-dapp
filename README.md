@@ -66,7 +66,7 @@ O endereço da professora não é uma conta do Hardhat, então localmente as fun
 ## Decisões de implementação
 
 - O Turing tem 18 casas decimais, como o Ether. As funções recebem a quantidade nessa unidade (1 TUR = 10¹⁸). O frontend converte com `parseUnits`, então dá para votar com frações, por exemplo 0.5.
-- `updateUser` também seta `voting = true`, como a especificação manda.
+- `voting` começa em `true` (votação já ativa após o deploy).
 - `vote` exige que o codinome votado exista, para não cunhar tokens no endereço zero.
 - A cada 10 votos, o votante recebe 1 TUR.
 - O contrato guarda um mapping inverso `codinomeOf` (endereço → codinome) para identificar quem chama `vote`, e uma lista `getCodinomes()` para o frontend montar os selects e o ranking.

@@ -27,7 +27,7 @@ contract Turing {
     address public owner;
 
     // Indica se a votação está ativa.
-    bool public voting;
+    bool public voting = true;
 
     // Usuários autorizados: codinome => endereço.
     mapping(string => address) public users;
@@ -79,9 +79,6 @@ contract Turing {
     {
         require(bytes(codinome).length > 0, "Codinome vazio");
         _setUser(codinome, user_addr);
-        // Conforme a especificação, updateUser também ativa a votação.
-        voting = true;
-        emit VotingStatusChanged(true);
     }
 
     function votingOn() external onlyOwnerOrProfessora {
