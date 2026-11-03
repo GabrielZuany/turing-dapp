@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Turing dApp</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Turing dApp</h1>
+      <p class="sub">Votação dos projetos finais com a criptomoeda Turing (TUR)</p>
+    </header>
+
+    <main>
+      <section class="card" id="connect-card">
+        <h2>Conta</h2>
+        <div class="row">
+          <button id="btn-metamask">Conectar MetaMask</button>
+          <span class="or">ou</span>
+          <select id="local-account"></select>
+          <button id="btn-local">Usar conta do nó local</button>
+        </div>
+        <div id="account-info" class="hidden">
+          <p><strong>Endereço:</strong> <code id="acc-address"></code></p>
+          <p><strong>Codinome:</strong> <span id="acc-codinome"></span></p>
+          <p><strong>Perfil:</strong> <span id="acc-role"></span></p>
+          <p><strong>Saldo:</strong> <span id="acc-balance"></span> TUR</p>
+        </div>
+        <p><strong>Votação:</strong> <span id="voting-status" class="badge">?</span></p>
+      </section>
+
+      <section class="card hidden" id="vote-card">
+        <h2>Votar</h2>
+        <form id="vote-form">
+          <label>Codinome
+            <select id="vote-codinome" required></select>
+          </label>
+          <label>Quantidade de Turings (máx. 2)
+            <input id="vote-amount" type="number" min="0.000000000000000001" max="2" step="any" value="1" required />
+          </label>
+          <button type="submit">Votar</button>
+        </form>
+      </section>
+
+      <section class="card hidden" id="admin-card">
+        <h2>Superusuário</h2>
+        <form id="issue-form">
+          <label>Codinome
+            <select id="issue-codinome" required></select>
+          </label>
+          <label>Quantidade de Turings
+            <input id="issue-amount" type="number" min="0.000000000000000001" step="any" value="1" required />
+          </label>
+          <button type="submit">issueToken</button>
+        </form>
+        <div class="row">
+          <button id="btn-voting-on">votingOn</button>
+          <button id="btn-voting-off">votingOff</button>
+        </div>
+      </section>
+
+      <section class="card" id="ranking-card">
+        <h2>Ranking</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Codinome</th><th>Endereço</th><th class="num">Turings</th></tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+      </section>
+
+      <div id="message" class="hidden"></div>
+    </main>
+
+    <script src="/vendor/ethers.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
