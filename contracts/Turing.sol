@@ -1,50 +1,48 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-/**
- * Turing: criptomoeda da disciplina, usada para votar nos projetos finais.
- *
- * Estratégia "Uncapped Lazy Supply": não existe emissão inicial (nada é
- * cunhado no construtor) e não há limite máximo de supply. Os tokens são
- * criados sob demanda por issueToken() e vote().
- *
- * Assim como o Ether, o Turing tem 18 casas decimais: 1 Turing = 10**18
- * unidades. Todas as quantidades recebidas pelas funções estão nessa unidade.
- */
+// token turing, usado pra votar nos projetos finais
+// uncapped lazy supply: nada eh mintado no construtor e nao tem limite maximo
+// os tokens so sao criados no issueToken e no vote
+// nao eh erc20, so usa alguns nomes parecidos (name, symbol, decimals, balanceOf, Transfer)
 contract Turing {
     string public name = "Turing";
     string public symbol = "TUR";
+    // 18 casas decimais igual o ether, entao 1 turing = 10**18 unidades
+    // o contrato sempre trabalha nessa unidade, o front converte com parseUnits
     uint8 public constant decimals = 18;
 
     uint256 public constant ONE_TURING = 10 ** 18;
     uint256 public constant MAX_VOTE = 2 * ONE_TURING;
     uint256 public constant VOTES_PER_REWARD = 10;
 
-    // Codinome da professora (superusuária, junto com o owner).
+    // professora e owner sao os superusuarios
     string public constant PROFESSORA = "roberta";
 
     uint256 public totalSupply;
     address public owner;
 
-    // Indica se a votação está ativa.
+    // votacao ja comeca ativa
     bool public voting = true;
 
-    // Usuários autorizados: codinome => endereço.
+    // usuarios autorizados (codinome => endereco), preenchido no construtor
     mapping(string => address) public users;
 
-    // Caminho inverso (endereço => codinome), usado para identificar quem chama vote().
+    // inverso do users, pra saber o codinome de quem chamou o vote
     mapping(address => string) public codinomeOf;
 
-    // Lista de codinomes cadastrados, para o frontend conseguir listá-los.
+    // mapping nao da pra percorrer, entao guardo os codinomes numa lista pro front
     string[] private codinomes;
     mapping(string => bool) private isListed;
 
-    // hasVote[votante][votado] => já votou?
+    // chave primaria eh quem vota e a secundaria eh quem recebe
+    // ex: hasVote["nome1"]["nome2"] = true quer dizer que nome1 ja votou no nome2
     mapping(string => mapping(string => bool)) public hasVote;
 
-    // Quantidade de votos dados por cada codinome (para a recompensa a cada 10 votos).
+    // quantos votos cada codinome ja deu, usado no bonus
     mapping(string => uint256) public voteCount;
 
+    // saldo de cada carteira
     mapping(address => uint256) private balances;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -52,6 +50,7 @@ contract Turing {
     event VotingStatusChanged(bool voting);
     event UserUpdated(string codinome, address user_addr);
 
+    // require que se repete em updateUser, votingOn, votingOff e issueToken
     modifier onlyOwnerOrProfessora() {
         require(
             msg.sender == owner || msg.sender == users[PROFESSORA],
@@ -63,8 +62,9 @@ contract Turing {
     constructor() {
         owner = msg.sender;
 
-        // Dados da tabela exemplo. O owner é quem faz o deploy
-        // (conta #0 do `npx hardhat node`: 0xf39F...2266).
+        // tabela exemplo da professora
+        // o owner eh quem faz o deploy (conta #0 do hardhat node)
+        // sem mint aqui
         _setUser(PROFESSORA, 0x502542668aF09fa7aea52174b9965A7799343Df7);
         _setUser("nome1", 0x70997970C51812dc3A010C7d01b50e0d17dc79C8);
         _setUser("nome2", 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC);
@@ -125,7 +125,7 @@ contract Turing {
         _mint(to, qtde_de_Turings);
         emit Voted(voter, codinome, qtde_de_Turings);
 
-        // A cada 10 votos, o votante recebe 1 Turing.
+        // bonus: a cada 10 votos quem votou ganha 1 turing (10, 20, 30...)
         voteCount[voter] += 1;
         if (voteCount[voter] % VOTES_PER_REWARD == 0) {
             _mint(msg.sender, ONE_TURING);
@@ -141,7 +141,7 @@ contract Turing {
     }
 
     function _setUser(string memory codinome, address user_addr) private {
-        // Remove o vínculo inverso do endereço antigo deste codinome.
+        // se o codinome ja tinha endereco, apaga o inverso do antigo
         address old = users[codinome];
         if (old != address(0)) {
             delete codinomeOf[old];
@@ -159,6 +159,8 @@ contract Turing {
         emit UserUpdated(codinome, user_addr);
     }
 
+    // todo mint passa por aqui: aumenta o supply e o saldo
+    // o Transfer vindo do endereco zero eh o que o front escuta pra atualizar o ranking
     function _mint(address to, uint256 amount) private {
         totalSupply += amount;
         balances[to] += amount;

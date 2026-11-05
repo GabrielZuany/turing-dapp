@@ -6,12 +6,13 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploy com a conta:", deployer.address);
 
+  // aqui troquei o nome do contrato do boilerplate pra Turing
   const turing = await ethers.deployContract("Turing");
   await turing.waitForDeployment();
   const address = await turing.getAddress();
   console.log("Turing implantado em:", address);
 
-  // Salva endereço e ABI para o frontend.
+  // salva endereco e abi num json que o front le
   const { abi } = await artifacts.readArtifact("Turing");
   const out = path.join(__dirname, "..", "frontend", "contract.json");
   fs.writeFileSync(

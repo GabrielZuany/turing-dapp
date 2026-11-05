@@ -7,17 +7,17 @@ const PROFESSORA = "roberta";
 const $ = (id) => document.getElementById(id);
 
 const state = {
-  config: null, // { address, chainId, abi } gerado pelo scripts/deploy.js
-  readProvider: null, // sempre aponta para o nó local; usado para leituras e eventos
+  config: null, // contract.json gerado pelo deploy
+  readProvider: null, // no local, usado pra leitura e eventos
   readContract: null,
   signer: null,
-  contract: null, // contrato conectado ao signer, para transações
+  contract: null, // contrato com o signer, pra mandar transacao
   address: null,
   codinome: "",
   codinomes: [],
 };
 
-// ---------------------------------------------------------------- utilidades
+// utilidades
 
 function showMessage(text, isError = false) {
   const el = $("message");
@@ -60,7 +60,7 @@ function fillSelect(select, options) {
   if (options.some((o) => o.value === current)) select.value = current;
 }
 
-// Executa uma transação, mostrando o resultado e desabilitando o botão enquanto isso.
+// manda a transacao e trava o botao ate confirmar
 async function sendTx(button, label, fn) {
   if (!state.contract) return showMessage("Conecte uma conta primeiro.", true);
   button.disabled = true;
@@ -78,7 +78,7 @@ async function sendTx(button, label, fn) {
   }
 }
 
-// ------------------------------------------------------------------- leitura
+// leitura do contrato
 
 async function loadCodinomes() {
   state.codinomes = await state.readContract.getCodinomes();
@@ -156,20 +156,20 @@ async function refreshAccount() {
   $("acc-role").textContent = roles.join(" · ");
   $("acc-balance").textContent = formatTuring(balance);
 
-  // Usuários comuns: só votar. Superusuários: votar + funções administrativas.
+  // usuario comum so ve o votar, superusuario ve votar + issueToken, votingOn e votingOff
   $("vote-card").classList.toggle("hidden", !(isUser || isSuper));
   $("admin-card").classList.toggle("hidden", !isSuper);
 }
 
 async function refreshAll() {
   await loadCodinomes();
-  // refreshAccount define state.codinome, que é excluído do select de voto.
+  // precisa saber o codinome antes pra tirar ele do select de voto
   await refreshAccount();
   refreshSelects();
   await Promise.all([refreshVotingStatus(), refreshRanking()]);
 }
 
-// --------------------------------------------------------------------- contas
+// contas
 
 async function useSigner(signer) {
   state.signer = signer;
@@ -211,7 +211,7 @@ async function connectMetaMask() {
   }
 }
 
-// Contas desbloqueadas do `npx hardhat node`, para testar sem MetaMask.
+// contas do hardhat node, da pra usar sem metamask
 async function loadLocalAccounts() {
   const accounts = await state.readProvider.listAccounts();
   const options = await Promise.all(
@@ -234,7 +234,7 @@ async function connectLocal() {
   }
 }
 
-// ----------------------------------------------------------------------- init
+// init
 
 async function init() {
   try {
@@ -253,7 +253,7 @@ async function init() {
     await refreshAll();
     await loadLocalAccounts();
 
-    // Ranking atualizado por eventos: toda emissão (vote/issueToken) gera um Transfer.
+    // ranking por eventos: todo mint (vote, issueToken, bonus) emite Transfer e a pagina recarrega os saldos
     state.readContract.on("Transfer", () => refreshRanking().then(refreshAccount));
     state.readContract.on("VotingStatusChanged", refreshVotingStatus);
     state.readContract.on("UserUpdated", () => refreshAll().then(loadLocalAccounts));
@@ -269,6 +269,7 @@ $("btn-local").addEventListener("click", connectLocal);
 $("vote-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const codinome = $("vote-codinome").value;
+  // usuario digita em turings (ex 1.5) e aqui vira 1.5 * 10**18 que eh o que o contrato espera
   const amount = ethers.parseUnits($("vote-amount").value, 18);
   sendTx(e.submitter, "vote", (c) => c.vote(codinome, amount));
 });

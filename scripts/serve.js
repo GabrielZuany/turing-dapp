@@ -1,4 +1,4 @@
-// Servidor estático mínimo para o frontend (sem dependências extras).
+// servidor simples so pra servir o front
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
